@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 import psutil
 import collections
 import json
@@ -10,7 +11,7 @@ INTERVAL = 5
 
 hist = collections.deque(maxlen=LENGTH)
 app = Flask(__name__)
-
+CORS(app)
 
 @app.route("/")
 def cpu_pct():
