@@ -4,26 +4,41 @@ import psutil
 import collections
 import json
 import atexit
+import subprocess
+from flask import jsonify
 from apscheduler.schedulers.background import BackgroundScheduler
 
 LENGTH = 20
 INTERVAL = 5
 
-hist = collections.deque(maxlen=LENGTH)
-histjson = "[]"
+cpuhist = collections.deque(maxlen=LENGTH)
+ramhist = collections.deque(maxlen=LENGTH)
+histjson = {}
 app = Flask(__name__)
 CORS(app)
 
 
 @app.route("/")
 def cpu_pct():
-    return histjson
+    return jsonify(histjson)
 
 
 def update_hist():
-    hist.append(psutil.cpu_percent())
+    cpuhist.append(psutil.cpu_percent())
+
+    meminfo = psutil.virtual_memory()
+    ramhist.append(meminfo.percent)
+    numconns = int(subprocess.check_output([
+        'bash', '-c', 'netstat -nap 2> /dev/null | grep 14265 | grep ESTABLISHED | wc -l'
+    ]))
+
     global histjson
-    histjson = json.dumps(list(hist))
+    histjson = {
+        'cpu': list(cpuhist),
+        'ramused': list(ramhist),
+        'ramtotal': meminfo.total,
+        'connections': numconns
+    }
 
 
 cron = BackgroundScheduler(daemon=True)
