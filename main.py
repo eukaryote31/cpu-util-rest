@@ -14,6 +14,7 @@ histjson = "[]"
 app = Flask(__name__)
 CORS(app)
 
+
 @app.route("/")
 def cpu_pct():
     return histjson
@@ -21,7 +22,9 @@ def cpu_pct():
 
 def update_hist():
     hist.append(psutil.cpu_percent())
+    global histjson
     histjson = json.dumps(list(hist))
+
 
 cron = BackgroundScheduler(daemon=True)
 cron.add_job(update_hist, 'interval', seconds=INTERVAL)
